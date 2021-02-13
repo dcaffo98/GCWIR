@@ -48,13 +48,15 @@ class MaskedFaceVgg(nn.Module):
         x = torch.flatten(x, 1)
         return x
 
-
-    def forward(self, x):
-        x = self.get_feature_vector(x)
+    def classify(self, x):
         x = self.classifier(x)
         x = self.softmax(x)
         return x
 
+    def forward(self, x):
+        x = self.get_feature_vector(x)
+        x = self.classify(x)
+        return x
 
     @staticmethod
     def vgg_face_dag_2_pytorch_vgg_weights(vgg_dag_weights):
