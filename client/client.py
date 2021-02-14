@@ -25,12 +25,23 @@ class Client:
                 response = pickle.loads(await websocket.recv())
                 samples = torch.stack([sample for sample, _ in response], dim=0).to(self.device)
                 labels = torch.from_numpy(np.fromiter((label for _, label in response), int)).to(self.device)
-                print(samples.shape, labels.shape)
+                print(f"[Client] --> recevied: {samples.shape}, {labels.shape}")
                 predictions = self.model.classify(samples)
                 loss = self.cross_entropy(predictions, labels)
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-                torch.save(self.model.state_dict(), 'client/new_weights.pth')
+                classifier = pickle.dumps(self.model.classifier.state_dict())
+                
+                await websocket.send(len(classifier).to_bytes(16, 'little'))
+                current = 0
+                while current <= len(classifier):
+                    chunk = classifier[current:current + 1000000]
+                    await websocket.send((chunk, current.to_bytes(4, 'little')))
+                    current += 1000000
+                print(f"[Client] --> sent {len(classifier)} bytes")
                 print('[Client] --> training completed!')
                 await asyncio.sleep(self.polling_interval)            
+
+
+# [param for param in self.model.classifier.parameters()]

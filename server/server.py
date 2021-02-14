@@ -29,5 +29,24 @@ class Server:
             result = [(q.features_vector, q.label) for q in query]
             await websocket.send(pickle.dumps(result))
 
+            weights_size = int.from_bytes(await websocket.recv(), 'little')
+            current_received_size = 0
+            l = {}
+            while current_received_size != weights_size:
+                chunk = await websocket.recv()
+                index = int.from_bytes(chunk[-4:], 'little')
+                l[index] = chunk[:len(chunk)- 4]
+                current_received_size += len(l[index])
+            print(f"[Server] --> received {sum((len(x) for x in l.values()))} bytes")
+            sorted_indexes = sorted(l.keys())
+            obj = b''.join([l[i] for i in sorted_indexes])
+            weights = pickle.loads(obj)
+            from model.models import MaskedFaceVgg
+            model = MaskedFaceVgg()
+            model.classifier.load_state_dict(weights)
+            print(type(weights))
+            torch.save(weights, 'server/new_weights.pth')
+            print(f"[Server] --> weights loading completed")
+
     async def bridge_handler(self, websocket, path):
         pass
