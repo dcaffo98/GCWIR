@@ -6,7 +6,7 @@ import pickle
 import numpy as np
 from datetime import datetime
 from model.models import MaskedFaceVgg
-
+from utils.utils import send_large_obj_over_ws
 
 class Client:
 
@@ -32,16 +32,11 @@ class Client:
                 loss.backward()
                 self.optimizer.step()
                 classifier = pickle.dumps(self.model.classifier.state_dict())
-                
+                import time
+                start = time.time()
                 await websocket.send(len(classifier).to_bytes(16, 'little'))
-                current = 0
-                while current <= len(classifier):
-                    chunk = classifier[current:current + 1000000]
-                    await websocket.send((chunk, current.to_bytes(4, 'little')))
-                    current += 1000000
+                await send_large_obj_over_ws(websocket, classifier)
+                print(F"ELAPSED TIME: {time.time() - start}")
                 print(f"[Client] --> sent {len(classifier)} bytes")
                 print('[Client] --> training completed!')
                 await asyncio.sleep(self.polling_interval)            
-
-
-# [param for param in self.model.classifier.parameters()]
