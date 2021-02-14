@@ -35,8 +35,8 @@ class Client:
                 import time
                 start = time.time()
                 await websocket.send(len(classifier).to_bytes(16, 'little'))
-                await send_large_obj_over_ws(websocket, classifier)
-                print(F"ELAPSED TIME: {time.time() - start}")
+                await send_large_obj_over_ws(websocket, classifier, chunk_size=1000000)
+                print(f"ELAPSED TIME: {time.time() - start}")
                 print(f"[Client] --> sent {len(classifier)} bytes")
                 print('[Client] --> training completed!')
                 await asyncio.sleep(self.polling_interval)            
