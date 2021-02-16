@@ -19,8 +19,8 @@ class Client:
         self.cross_entropy = nn.CrossEntropyLoss()
 
     async def request_samples(self):
-        while True:
-            async with websockets.connect(self.server_uri) as websocket:
+        async with websockets.connect(self.server_uri) as websocket:
+            while True:
                 await websocket.send(str(datetime(2021, 2, 10)))                    # TODO: replace with datetime.now()
                 response = pickle.loads(await websocket.recv())
                 samples = torch.stack([sample for sample, _ in response], dim=0).to(self.device)
@@ -34,7 +34,6 @@ class Client:
                 classifier = pickle.dumps(self.model.classifier.state_dict())
                 import time
                 start = time.time()
-                await websocket.send(len(classifier).to_bytes(16, 'little'))
                 await send_large_obj_over_ws(websocket, classifier, chunk_size=1000000)
                 print(f"ELAPSED TIME: {time.time() - start}")
                 print(f"[Client] --> sent {len(classifier)} bytes")

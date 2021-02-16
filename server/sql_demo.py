@@ -1,7 +1,9 @@
 from sqlalchemy import *
 from sqlalchemy.orm import mapper, sessionmaker
-import os
+import sys,os
 import uuid
+
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
 if __name__ == '__main__':
     import sys
