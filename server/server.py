@@ -47,6 +47,7 @@ class Server:
             weights = await receive_large_obj_over_ws(websocket)
             print(f"[Server] --> received {len(weights)} bytes")
             weights = pickle.loads(weights)
+            # TODO: remove model weights loading -- temporarily just for check purpose
             from model.models import MaskedFaceVgg
             model = MaskedFaceVgg()
             model.classifier.load_state_dict(weights)
@@ -71,7 +72,8 @@ class Server:
                 weights = pickle.dumps(weights)
                 await send_large_obj_over_ws(websocket, weights)
                 self._last_weights_update_time = datetime.now()
-            await asyncio.sleep(5)
+            # TODO: replace with self.sleep_time
+            await asyncio.sleep(5)                              
 
     async def bridge_handler(self, websocket, path):
         t1 = asyncio.create_task(self.__listen_to_bridge(websocket, path))
