@@ -1,9 +1,15 @@
 import torch
-from datetime import datetime
 import pickle
+from datetime import datetime
 from sqlalchemy import Column, String, Integer, DateTime, BLOB
 from uuid import uuid4
-from db_manager import Base
+import os, sys
+
+if __name__ == '__main__':
+    sys.path.append(os.getcwd())
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
+
+from server.db_manager import Base
 
 
 class VggFeaturesVector(Base):

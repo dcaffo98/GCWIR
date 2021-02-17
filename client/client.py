@@ -5,7 +5,13 @@ import torch.nn as nn
 import pickle
 import numpy as np
 from datetime import datetime
-from model.models import MaskedFaceVgg
+import os, sys
+
+if __name__ == '__main__':
+    sys.path.append(os.getcwd())
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
+
+from model.masked_face_vgg import MaskedFaceVgg
 from utils.utils import send_large_obj_over_ws
 
 class Client:

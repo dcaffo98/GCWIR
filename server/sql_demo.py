@@ -1,16 +1,14 @@
 from sqlalchemy import *
 from sqlalchemy.orm import mapper, sessionmaker
-import sys,os
 import uuid
-
-sys.path[0]=os.path.dirname(os.path.realpath(__file__))
+import os, sys
 
 if __name__ == '__main__':
-    import sys
     sys.path.append(os.getcwd())
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
-from db_models import VggFeaturesVector
-from db_manager import Session, engine, Base
+from server.db_models import VggFeaturesVector
+from server.db_manager import Session, engine, Base
 
 
 Base.metadata.create_all(engine)

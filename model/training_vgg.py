@@ -3,13 +3,14 @@ import torch.nn as nn
 import torchvision.models as models
 import torchvision
 import matplotlib.pyplot as plt
+import os, sys
 
 if __name__ == '__main__':
-    import os, sys
     sys.path.append(os.getcwd())
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
 from dataset.dataset import LazyDataset
-from models import MaskedFaceVgg
+from model.masked_face_vgg import MaskedFaceVgg
 
 
 vgg = MaskedFaceVgg()

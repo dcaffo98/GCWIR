@@ -1,12 +1,17 @@
 from torch.utils.data import Dataset
-import torch
-import json
-import os
-import numpy as np
-from PIL import Image
-import math
 from torchvision import transforms
 from configparser import ConfigParser
+from PIL import Image
+import torch
+import json
+import numpy as np
+import math
+import os, sys
+
+if __name__ == '__main__':
+    sys.path.append(os.getcwd())
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
+
 from utils.configurator import Configurator
 
 

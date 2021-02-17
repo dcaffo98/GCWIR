@@ -4,8 +4,14 @@ import torch
 import pickle
 import os
 from datetime import datetime
-from db_models import VggFeaturesVector
-from db_manager import Session, engine, Base
+import os, sys
+
+if __name__ == '__main__':
+    sys.path.append(os.getcwd())
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
+
+from server.db_models import VggFeaturesVector
+from server.db_manager import Session, engine, Base
 from utils.utils import send_large_obj_over_ws, receive_large_obj_over_ws
 
 
@@ -48,7 +54,7 @@ class Server:
             print(f"[Server] --> received {len(weights)} bytes")
             weights = pickle.loads(weights)
             # TODO: remove model weights loading -- temporarily just for check purpose
-            from model.models import MaskedFaceVgg
+            from model.masked_face_vgg import MaskedFaceVgg
             model = MaskedFaceVgg()
             model.classifier.load_state_dict(weights)
             print(type(weights))

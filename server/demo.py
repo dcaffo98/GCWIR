@@ -1,7 +1,13 @@
 import asyncio
-from server import Server
+import os, sys
+
+if __name__ == '__main__':
+    sys.path.append(os.getcwd())
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
+
+from server.srv import Server
 from client.client import Client
-from fake_bridge import FakeBridge
+from server.fake_bridge import FakeBridge
 from utils.configurator import Configurator
 
 configurator = Configurator()
