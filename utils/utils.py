@@ -1,6 +1,10 @@
 import asyncio
 from uuid import uuid4
+import os, sys
 
+if __name__ == '__main__':
+    sys.path.append(os.getcwd())
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
 def stringify_uuid4():
     return str(uuid4())

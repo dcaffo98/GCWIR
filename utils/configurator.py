@@ -1,5 +1,9 @@
 from configparser import ConfigParser
+import os, sys
 
+if __name__ == '__main__':
+    sys.path.append(os.getcwd())
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
 class Configurator():
         
