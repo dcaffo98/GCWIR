@@ -1,9 +1,15 @@
 import cv2
 import torch
+import matplotlib.pyplot as plt
 from PIL import Image
 from torchvision import transforms
-from models import MaskedFaceVgg
-import matplotlib.pyplot as plt
+import os, sys
+
+if __name__ == '__main__':
+    sys.path.append(os.getcwd())
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
+
+from model.masked_face_vgg import MaskedFaceVgg
 
 
 # check camera number

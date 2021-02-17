@@ -4,8 +4,14 @@ import torch
 import pickle
 import os
 from datetime import datetime
-from db_models import VggFeaturesVector
-from db_manager import Session, engine, Base
+import os, sys
+
+if __name__ == '__main__':
+    sys.path.append(os.getcwd())
+sys.path[0]=os.path.dirname(os.path.realpath(__file__))
+
+from server.db_models import VggFeaturesVector
+from server.db_manager import Session, engine, Base
 from utils.utils import send_large_obj_over_ws, receive_large_obj_over_ws
 
 
@@ -44,18 +50,13 @@ class Server:
             query = self.session.query(VggFeaturesVector).filter(VggFeaturesVector.timestamp >= target_time).limit(10).all()
             result = [(q.features_vector, q.label) for q in query]
             await websocket.send(pickle.dumps(result))
-            weights = await receive_large_obj_over_ws(websocket)
-            print(f"[Server] --> received {len(weights)} bytes")
-            weights = pickle.loads(weights)
-            # TODO: remove model weights loading -- temporarily just for check purpose
-            from model.models import MaskedFaceVgg
-            model = MaskedFaceVgg()
-            model.classifier.load_state_dict(weights)
-            print(type(weights))
-            torch.save(weights, self._filename)
-            self._last_weights_update = datetime.now()
-            print(f"[Server] --> weights loading completed")
-            del model
+            if result:
+                weights = await receive_large_obj_over_ws(websocket)
+                print(f"[Server] --> received {len(weights)} bytes")
+                weights = pickle.loads(weights)
+                print(type(weights))
+                torch.save(weights, self._filename)
+                self._last_weights_update = datetime.now()
 
     async def __listen_to_bridge(self, websocket, path):
         while True:
