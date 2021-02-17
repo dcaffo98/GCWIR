@@ -1,5 +1,9 @@
 import asyncio
+from uuid import uuid4
 
+
+def stringify_uuid4():
+    return str(uuid4())
 
 async def send_large_obj_over_ws(websocket, obj, chunk_size=1000000):
     await websocket.send(len(obj).to_bytes(16, 'little'))

@@ -2,15 +2,14 @@ import torch
 from datetime import datetime
 import pickle
 from sqlalchemy import Column, String, Integer, DateTime, BLOB
-from uuid import uuid4
 from db_manager import Base
-
+from utils.utils import stringify_uuid4
 
 class VggFeaturesVector(Base):
 
     __tablename__ = 'VggFeaturesVector'
 
-    id = Column(String(36), primary_key=True, default=str(uuid4()))
+    id = Column(String(36), primary_key=True, default=stringify_uuid4)
     data = Column(BLOB, nullable=False)
     label = Column(Integer, nullable=False)
     timestamp = Column(DateTime, nullable=False)
