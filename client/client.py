@@ -12,7 +12,7 @@ if __name__ == '__main__':
 sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
 from model.masked_face_vgg import MaskedFaceVgg
-from utils.utils import send_large_obj_over_ws
+from utils.utils import send_large_obj_over_ws, receive_large_obj_over_ws
 
 class Client:
 
@@ -28,7 +28,7 @@ class Client:
         async with websockets.connect(self.server_uri) as websocket:
             while True:
                 await websocket.send(str(datetime(2021, 2, 10)))                    # TODO: replace with datetime.now()
-                response = pickle.loads(await websocket.recv())
+                response = pickle.loads(await receive_large_obj_over_ws(websocket))
                 if response:
                     samples = torch.stack([sample for sample, _ in response], dim=0).to(self.device)
                     labels = torch.from_numpy(np.fromiter((label for _, label in response), int)).to(self.device)

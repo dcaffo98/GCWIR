@@ -46,12 +46,18 @@ class Server:
         return datetime.fromtimestamp(os.path.getmtime(self._filename))
 
     async def model_handler(self, websocket, path):
+        last_sent_samples = set()
         while True:
             target_time = datetime.strptime(await websocket.recv(), "%Y-%m-%d %H:%M:%S")                                        # TODO: remove datetime.strptime(...)
-            query = self.session.query(VggFeaturesVector).filter(VggFeaturesVector.timestamp >= target_time).limit(10).all()
+            query = self.session.query(VggFeaturesVector) \
+                .filter(VggFeaturesVector.timestamp >= target_time) \
+                .filter(~VggFeaturesVector.id.in_(last_sent_samples)) \
+                .all()
             result = [(q.features_vector, q.label) for q in query]
-            await websocket.send(pickle.dumps(result))
-            if result:
+            last_sent_samples = {q.id for q in query} if query else last_sent_samples
+            result = pickle.dumps(result)
+            await send_large_obj_over_ws(websocket, result)
+            if query:
                 weights = await receive_large_obj_over_ws(websocket)
                 print(f"[Server] --> received {len(weights)} bytes")
                 weights = pickle.loads(weights)
