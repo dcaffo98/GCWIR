@@ -36,7 +36,6 @@ class Client:
                     predictions = self.model.classify(samples)
                     loss = self.cross_entropy(predictions, labels)
                     self.optimizer.zero_grad()
-#                    loss.requires_grad = True
                     loss.backward()
                     self.optimizer.step()
                     classifier = pickle.dumps(self.model.classifier.state_dict())
@@ -46,4 +45,4 @@ class Client:
                     print(f"ELAPSED TIME: {time.time() - start}")
                     print(f"[Client] --> sent {len(classifier)} bytes")
                     print('[Client] --> training completed!')
-                #await asyncio.sleep(self.polling_interval)            
+                # await asyncio.sleep(self.polling_interval)            

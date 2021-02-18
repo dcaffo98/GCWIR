@@ -38,13 +38,12 @@ async def foo():
         t = torch.nn.functional.interpolate(t, size=(224, 224))
 
         # TODO: fix torch.no_grad() causing "RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn"
-        # with torch.no_grad():
+        with torch.no_grad():
         # plt.imshow(t.squeeze(0).permute(1,2,0))
         # plt.show()
-        predictions = vgg(t)     
-        features_vector = vgg.get_feature_vector(t)
+            predictions = vgg(t)     
+            features_vector = vgg.get_feature_vector(t)
         result = torch.argmax(predictions, 1).squeeze(0)
-        features_vector = features_vector.requires_grad_()
         await bridge.send_features_vector(features_vector, result.item())
         print(f"Label: {'CORRECT' if result.item() == 1 else 'INCORRECT'}")
         await asyncio.sleep(30)
