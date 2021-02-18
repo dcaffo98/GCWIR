@@ -10,7 +10,7 @@ if __name__ == '__main__':
 sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
 from server.db_manager import Base
-
+from utils.utils import stringify_uuid4
 
 class VggFeaturesVector(Base):
 

@@ -2,7 +2,7 @@ import websockets
 import asyncio
 import torch
 import pickle
-import os
+import os, sys
 from datetime import datetime
 import os, sys
 
@@ -38,6 +38,7 @@ class Server:
 
     def db_upload(self, sample, label):
         obj = VggFeaturesVector(data=sample, label=label)
+        from uuid import uuid4
         self.session.add(obj)
         self.session.commit()
 
@@ -62,8 +63,10 @@ class Server:
         while True:
             sample_label_pair = await websocket.recv()
             sample = sample_label_pair[:len(sample_label_pair) -1]
-            label = int.from_byte(sample_label_pair[-4:], 'little')
+            label = int.from_bytes(sample_label_pair[-1:], 'little')
             self.db_upload(sample, label)
+            sample = pickle.loads(sample)
+            print(f"[Server] --> received features vector with shape {sample.shape} and label {label} from bridge and saved to db")
 
     async def __send_to_bridge(self, websocket, path):
         while True:

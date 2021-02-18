@@ -36,6 +36,7 @@ class Client:
                     predictions = self.model.classify(samples)
                     loss = self.cross_entropy(predictions, labels)
                     self.optimizer.zero_grad()
+#                    loss.requires_grad = True
                     loss.backward()
                     self.optimizer.step()
                     classifier = pickle.dumps(self.model.classifier.state_dict())
