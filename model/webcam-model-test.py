@@ -2,7 +2,6 @@ import cv2
 import torch
 import matplotlib.pyplot as plt
 from PIL import Image
-import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     import os, sys

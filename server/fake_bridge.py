@@ -27,6 +27,7 @@ class FakeBridge:
 
     async def receive_weights(self):
         async with websockets.connect(self.server_uri) as websocket:
+            print('BRIDGE CONNECTED')
             self.websocket = websocket
             while True:
                 weights = await receive_large_obj_over_ws(self.websocket)
@@ -40,3 +41,14 @@ class FakeBridge:
         features_vector = pickle.dumps(features_vector)
         await self.websocket.send((features_vector, label.to_bytes(1, 'little')))
         print(f"[Bridge]: --> sent features vector to server")
+
+    def start(self, standalone=True):
+        asyncio.get_event_loop().run_until_complete(self.receive_weights())
+        if standalone:
+            asyncio.get_event_loop().run_forever()
+
+if __name__ == '__main__':
+    bridge = FakeBridge()
+    from time import sleep
+    sleep(2)
+    bridge.start()

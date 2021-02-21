@@ -29,8 +29,13 @@ class Server:
             os.mknod(self._filename)
             print(10)
 
-    def start(self):
+    def _start(self):
         return websockets.serve(self.model_handler, self.address, self.model_port), websockets.serve(self.bridge_handler, self.address, self.bridge_port)
+
+    def start(self, standalone=True):
+        asyncio.get_event_loop().run_until_complete(asyncio.wait(self._start()))
+        if standalone:
+            asyncio.get_event_loop().run_forever()
 
     def __db_up_(self):
         Base.metadata.create_all(engine)
@@ -90,3 +95,7 @@ class Server:
         t2 = asyncio.create_task(self.__send_to_bridge(websocket, path))
         await asyncio.gather(t1, t2)
                 
+
+if __name__ == '__main__':
+    server = Server()
+    server.start()

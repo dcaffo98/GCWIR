@@ -46,3 +46,13 @@ class Client:
                     print(f"[Client] --> sent {len(classifier)} bytes")
                     print('[Client] --> training completed!')
                 # await asyncio.sleep(self.polling_interval)            
+                await asyncio.sleep(10)
+    
+    def start(self, standalone=True):
+        asyncio.get_event_loop().run_until_complete(self.request_samples())
+        if standalone:
+            asyncio.get_event_loop().run_forever()
+
+if __name__ == '__main__':
+    client = Client()
+    client.start()
