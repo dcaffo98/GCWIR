@@ -25,28 +25,32 @@ class Client:
         self.cross_entropy = nn.CrossEntropyLoss()
 
     async def request_samples(self):
-        async with websockets.connect(self.server_uri) as websocket:
-            while True:
-                await websocket.send(str(datetime(2021, 2, 10)))                    # TODO: replace with datetime.now()
-                response = pickle.loads(await receive_large_obj_over_ws(websocket))
-                if response:
-                    samples = torch.stack([sample for sample, _ in response], dim=0).to(self.device)
-                    labels = torch.from_numpy(np.fromiter((label for _, label in response), int)).to(self.device)
-                    print(f"[Client] --> recevied: {samples.shape}, {labels.shape}")
-                    predictions = self.model.classify(samples)
-                    loss = self.cross_entropy(predictions, labels)
-                    self.optimizer.zero_grad()
-                    loss.backward()
-                    self.optimizer.step()
-                    classifier = pickle.dumps(self.model.classifier.state_dict())
-                    import time
-                    start = time.time()
-                    await send_large_obj_over_ws(websocket, classifier, chunk_size=1000000)
-                    print(f"ELAPSED TIME: {time.time() - start}")
-                    print(f"[Client] --> sent {len(classifier)} bytes")
-                    print('[Client] --> training completed!')
-                # await asyncio.sleep(self.polling_interval)            
-                await asyncio.sleep(10)
+        while True:
+            try:
+                async with websockets.connect(self.server_uri) as websocket:
+                    while True:
+                        await websocket.send(str(datetime(2021, 2, 10)))                    # TODO: replace with datetime.now()
+                        response = pickle.loads(await receive_large_obj_over_ws(websocket))
+                        if response:
+                            samples = torch.stack([sample for sample, _ in response], dim=0).to(self.device)
+                            labels = torch.from_numpy(np.fromiter((label for _, label in response), int)).to(self.device)
+                            print(f"[Client] --> recevied: {samples.shape}, {labels.shape}")
+                            predictions = self.model.classify(samples)
+                            loss = self.cross_entropy(predictions, labels)
+                            self.optimizer.zero_grad()
+                            loss.backward()
+                            self.optimizer.step()
+                            classifier = pickle.dumps(self.model.classifier.state_dict())
+                            import time
+                            start = time.time()
+                            await send_large_obj_over_ws(websocket, classifier, chunk_size=1000000)
+                            print(f"ELAPSED TIME: {time.time() - start}")
+                            print(f"[Client] --> sent {len(classifier)} bytes")
+                            print('[Client] --> training completed!')
+                        # await asyncio.sleep(self.polling_interval)            
+                        await asyncio.sleep(10)
+            except ConnectionRefusedError:
+                await asyncio.sleep
     
     def start(self, standalone=True):
         asyncio.get_event_loop().run_until_complete(self.request_samples())

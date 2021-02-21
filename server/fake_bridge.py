@@ -26,14 +26,18 @@ class FakeBridge:
                 await asyncio.sleep(self.__sleeping_time)
 
     async def receive_weights(self):
-        async with websockets.connect(self.server_uri) as websocket:
-            print('BRIDGE CONNECTED')
-            self.websocket = websocket
-            while True:
-                weights = await receive_large_obj_over_ws(self.websocket)
-                print(f"[Bridge]: --> received {len(weights)} bytes")
-                weights = pickle.loads(weights)
-                print(f"[Bridge]: --> received {type(weights)}")
+        while True:
+            try:
+                async with websockets.connect(self.server_uri) as websocket:
+                    print('BRIDGE CONNECTED')
+                    self.websocket = websocket
+                    while True:
+                        weights = await receive_large_obj_over_ws(self.websocket)
+                        print(f"[Bridge]: --> received {len(weights)} bytes")
+                        weights = pickle.loads(weights)
+                        print(f"[Bridge]: --> received {type(weights)}")
+            except ConnectionRefusedError:
+                await asyncio.sleep(3)
 
     async def send_features_vector(self, features_vector, label):
         await self.__check_connection()
