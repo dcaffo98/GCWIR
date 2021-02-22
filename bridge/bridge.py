@@ -127,14 +127,14 @@ class Bridge():
         data = self.arduino.readline().decode('ascii')
         print(data)
 
-    def read_msg(self,msg):
-        if msg[0]!=b'\xff':
+    def read_msg(self, msg):
+        if msg[0] != b'\xff':
             return 0
-        if msg[1]!=b'\x03':
+        if msg[1] != b'\x03':
             return 0
-        if msg[2]==b'\x01':
+        if msg[2] == b'\x01':
             return 1
-        elif msg[2]==b'\x02':
+        elif msg[2] == b'\x02':
             return 2
 
 
@@ -142,31 +142,41 @@ class Bridge():
         return True
 
     def loop(self):
-        msg=[]
+        msg = []
         while True:
-            if self.is_waiting():
-                self.turn_on('incorrect')
+            # if self.is_waiting():
+            #     self.turn_on('incorrect')
+            if False:
+                pass
             else:
-                if self.arduino.in_waiting>0:
+                if self.arduino.in_waiting > 0:
                     recieved = self.arduino.read(1)
-                    if recieved==b'\xfe':
-                        if len(msg)!=3:
-                            msg=[]
+                    if recieved == b'\xfe':
+                        if len(msg) != 3:
+                            msg = []
                         else:
                             response = self.read_msg(msg)
-                            if response!=0:
-                                if response==1:
-                                    print('taking a picture')
-                                if response==2:
-                                    print('retrainig')
-                            msg=[]
+                            if response != 0:
+                                if response == 1:
+                                    print('taking a picture with label correct')
+                                    self.turn_on('correct')
+                                if response == 2:
+                                    print('taking a picture with label incorrect')
+                                    self.turn_on('incorrect')
+                            msg = []
                     else:
                         msg.append(recieved)
     
+    def __start(self):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.receive_weights())
+        loop.run_forever()
+
     def start(self):
+        from threading import Thread
+        t = Thread(target=self.__start)
+        t.start()
         self.loop()
-        asyncio.get_event_loop().run_until_complete(self.receive_weights())
-        asyncio.get_event_loop().run_forever()
         self.close()
 
 
