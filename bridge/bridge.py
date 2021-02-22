@@ -17,7 +17,7 @@ from torchvision import transforms
 
 class Bridge():
     def __init__(self, server_uri="ws://localhost:8889"):
-        self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=115200, timeout=.5)
+        self.arduino = serial.Serial(port='COM4', baudrate=115200, timeout=.5)
         self.server_uri = server_uri
         self.__sleeping_time = 3
         self.model = MaskedFaceVgg()
@@ -34,14 +34,19 @@ class Bridge():
                 await asyncio.sleep(self.__sleeping_time)
 
     async def receive_weights(self):
-        async with websockets.connect(self.server_uri) as websocket:
-            self.websockeimg = websocket
-            while True:
-                weights = await receive_large_obj_over_ws(self.websocket)
-                print(f"[Bridge]: --> received {len(weights)} bytes")
-                weights = pickle.loads(weights)
-                self.model.classifier.load_state_dict(weights, strict=True)
-                print(f"[Bridge]: --> weights updating completed!")
+        while True:
+            try:
+                async with websockets.connect(self.server_uri) as websocket:
+                    print('BRIDGE CONNECTED')
+                    self.websocket = websocket
+                    while True:
+                        weights = await receive_large_obj_over_ws(self.websocket)
+                        print(f"[Bridge]: --> received {len(weights)} bytes")
+                        weights = pickle.loads(weights)
+                        self.model.classifier.load_state_dict(weights, strict=True)
+                        print(f"[Bridge]: --> weights loading completed")
+            except ConnectionRefusedError:
+                await asyncio.sleep(3)
 
     async def send_features_vector(self, features_vector, label):
         await self.__check_connection()
