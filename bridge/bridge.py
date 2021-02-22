@@ -6,6 +6,7 @@ import websockets
 import pickle
 import os, sys
 import cv2
+import serial.tools.list_ports
 
 if __name__ == '__main__':
     sys.path.append(os.getcwd())
@@ -17,13 +18,23 @@ from torchvision import transforms
 
 class Bridge():
     def __init__(self, server_uri="ws://localhost:8889"):
-        self.arduino = serial.Serial(port='COM4', baudrate=115200, timeout=.5)
+        self.arduino = self.__get_serial_port(baudrate=9600, timeout=.5)
+        # self.arduino = serial.Serial(port='COM4', baudrate=115200, timeout=.5)
         self.server_uri = server_uri
         self.__sleeping_time = 3
         self.model = MaskedFaceVgg()
         self.__camera = 1
         self.cam = cv2.VideoCapture(0)
         sleep(2)      
+
+    def __get_serial_port(self, baudrate, timeout):
+        for port in serial.tools.list_ports.comports():
+            try:
+                return serial.Serial(port=str(port).split(' ')[0], baudrate=baudrate, timeout=timeout)
+            except serial.serialutil.SerialException:
+                continue
+        raise serial.serialutil.SerialException()
+                
 
     async def __check_connection(self):
         while True:
