@@ -1,3 +1,4 @@
+from os import path
 import serial
 from time import sleep
 import torch
@@ -18,11 +19,11 @@ from torchvision import transforms
 
 class Bridge():
     def __init__(self, server_uri="ws://localhost:8889"):
-        self.arduino = self.__get_serial_port(baudrate=9600, timeout=.5)
+        self.arduino = self.__get_serial_port(baudrate=115200, timeout=.5)
         # self.arduino = serial.Serial(port='COM4', baudrate=115200, timeout=.5)
         self.server_uri = server_uri
         self.__sleeping_time = 3
-        self.model = MaskedFaceVgg()
+        self.model = MaskedFaceVgg(weights_path=None)
         self._camera = 1
         self.cam = cv2.VideoCapture(0)
         sleep(2)      
@@ -68,9 +69,9 @@ class Bridge():
     
     def take_picture(self, label=None):
         go = input('Press enter to take a pick...')
-        cam.open(self._camera)
-        ret, frame = cam.read()
-        cam.release()
+        self.cam.open(self._camera)
+        ret, frame = self.cam.read()
+        self.cam.release()
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         img = transforms.functional.to_tensor(frame)
         img = img.unsqueeze(0)
@@ -81,7 +82,7 @@ class Bridge():
                 result = self.model.get_feature_vector(img)
                 asyncio.create_task(self.send_features_vector(result, label))
             else:
-                predicitons = self.model(img)
+                predictions = self.model(img)
                 result = torch.argmax(predictions, 1).squeeze(0)
                 print(f"Label: {'CORRECT' if result.item() == 1 else 'INCORRECT'}")
         return result          
@@ -144,9 +145,11 @@ class Bridge():
     def loop(self):
         msg = []
         while True:
-            # if self.is_waiting():
-            #     self.turn_on('incorrect')
+            #TODO picture to be evalueted bool
             if False:
+                #if correct 
+
+                #else
                 pass
             else:
                 if self.arduino.in_waiting > 0:
@@ -160,9 +163,11 @@ class Bridge():
                                 if response == 1:
                                     print('taking a picture with label correct')
                                     self.turn_on('correct')
+                                    #TODO take_picture correct send.
                                 if response == 2:
                                     print('taking a picture with label incorrect')
                                     self.turn_on('incorrect')
+                                    #TODO take_picture incorrect send.
                             msg = []
                     else:
                         msg.append(recieved)
@@ -177,7 +182,7 @@ class Bridge():
         t = Thread(target=self.__start)
         t.start()
         self.loop()
-        self.close()
+        #self.close()
 
 
 if __name__ == '__main__':
