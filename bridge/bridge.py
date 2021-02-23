@@ -23,7 +23,7 @@ class Bridge():
         # self.arduino = serial.Serial(port='COM4', baudrate=115200, timeout=.5)
         self.server_uri = server_uri
         self.__sleeping_time = 3
-        self.model = MaskedFaceVgg(weights_path=None)
+        self.model = MaskedFaceVgg()
         self._camera = 1
         self.cam = cv2.VideoCapture(0)
         sleep(2)      

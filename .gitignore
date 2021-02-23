@@ -7,3 +7,7 @@ venv/
 *.db
 
 *.pth
+
+CMFD
+
+IMFD
