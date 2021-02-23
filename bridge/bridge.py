@@ -77,14 +77,25 @@ class Bridge():
         img = torch.nn.functional.interpolate(img, size=(224, 224))
         result = None
         with torch.no_grad():
+            # import matplotlib.pyplot as plt
+            # plt.imshow(img.squeeze(0).permute(1,2,0))
+            # plt.show()
             if label:
                 result = self.model.get_feature_vector(img)
                 asyncio.create_task(self.send_features_vector(result, label))
+                return result
             else:
                 predictions = self.model(img)
                 result = torch.argmax(predictions, 1).squeeze(0)
                 print(f"Label: {'CORRECT' if result.item() == 1 else 'INCORRECT'}")
-        return result          
+                return result.item()
+
+    def __picture_loop(self):
+        while True:
+            if self.take_picture() == 1:
+                self.turn_on('correct')
+            else:
+                self.turn_on('incorrect')
 
     def open(self):
         self.arduino.open()
@@ -161,11 +172,11 @@ class Bridge():
                             if response != 0:
                                 if response == 1:
                                     print('taking a picture with label correct')
-                                    self.turn_on('correct')
+                                    #self.turn_on('correct')
                                     #TODO take_picture correct send.
                                 if response == 2:
                                     print('taking a picture with label incorrect')
-                                    self.turn_on('incorrect')
+                                    #self.turn_on('incorrect')
                                     #TODO take_picture incorrect send.
                             msg = []
                     else:
@@ -178,8 +189,10 @@ class Bridge():
 
     def start(self):
         from threading import Thread
-        t = Thread(target=self.__start)
-        t.start()
+        t1 = Thread(target=self.__start)
+        t2 = Thread(target=self.__picture_loop)
+        t1.start()
+        t2.start()
         self.loop()
         #self.close()
 
