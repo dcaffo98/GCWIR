@@ -23,7 +23,7 @@ class Bridge():
         self.server_uri = server_uri
         self.__sleeping_time = 3
         self.model = MaskedFaceVgg()
-        self.__camera = 1
+        self._camera = 1
         self.cam = cv2.VideoCapture(0)
         sleep(2)      
 
@@ -68,7 +68,7 @@ class Bridge():
     
     def take_picture(self, label=None):
         go = input('Press enter to take a pick...')
-        cam.open(CAMERA)
+        cam.open(self._camera)
         ret, frame = cam.read()
         cam.release()
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -99,13 +99,13 @@ class Bridge():
             self.arduino.write(bytes(b'\x01'))
             self.arduino.write(bytes(b'\xfe'))
             sleep(0.5)
-            self.read()
+            #self.read()
             sleep(4)
             self.arduino.write(bytes(b'\xff'))
             self.arduino.write(bytes(b'\x01'))
             self.arduino.write(bytes(b'\xfe'))
             sleep(0.5)
-            self.read()
+            #self.read()
             sleep(0.5)
         if device == 'incorrect': 
             self.arduino.write(bytes(b'\xff'))
@@ -113,13 +113,13 @@ class Bridge():
             self.arduino.write(bytes(b'\x01'))
             self.arduino.write(bytes(b'\xfe'))
             sleep(0.5)
-            self.read()
+            #self.read()
             sleep(4)
             self.arduino.write(bytes(b'\xff'))
             self.arduino.write(bytes(b'\x02'))
             self.arduino.write(bytes(b'\xfe'))
             sleep(0.5)
-            self.read()
+            #self.read()
             sleep(0.5)
 
     #TODO remove read fuction (just for debugging)
