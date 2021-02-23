@@ -48,6 +48,6 @@ async def foo():
         await asyncio.sleep(30)
 
 
-asyncio.get_event_loop().run_until_complete(asyncio.gather(*server.start()))
+asyncio.get_event_loop().run_until_complete(asyncio.gather(*server._start()))
 asyncio.get_event_loop().run_until_complete(asyncio.gather(client.request_samples(), bridge.receive_weights(), foo()))
 asyncio.get_event_loop().run_forever()

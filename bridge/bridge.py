@@ -20,12 +20,11 @@ from torchvision import transforms
 class Bridge():
     def __init__(self, server_uri="ws://localhost:8889"):
         self.arduino = self.__get_serial_port(baudrate=115200, timeout=.5)
-        # self.arduino = serial.Serial(port='COM4', baudrate=115200, timeout=.5)
         self.server_uri = server_uri
         self.__sleeping_time = 3
         self.model = MaskedFaceVgg()
-        self._camera = 1
-        self.cam = cv2.VideoCapture(0)
+        self.__camera = 1
+        self._cam = cv2.VideoCapture(self.__camera)
         sleep(2)      
 
     def __get_serial_port(self, baudrate, timeout):
@@ -69,9 +68,9 @@ class Bridge():
     
     def take_picture(self, label=None):
         go = input('Press enter to take a pick...')
-        self.cam.open(self._camera)
-        ret, frame = self.cam.read()
-        self.cam.release()
+        self._cam.open(self.__camera)
+        ret, frame = self._cam.read()
+        self._cam.release()
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         img = transforms.functional.to_tensor(frame)
         img = img.unsqueeze(0)

@@ -50,7 +50,7 @@ class Client:
                         # await asyncio.sleep(self.polling_interval)            
                         await asyncio.sleep(10)
             except ConnectionRefusedError:
-                await asyncio.sleep
+                await asyncio.sleep(3)
     
     def start(self, standalone=True):
         asyncio.get_event_loop().run_until_complete(self.request_samples())
