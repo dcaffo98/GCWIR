@@ -46,13 +46,16 @@ class FakeBridge:
         await self.websocket.send((features_vector, label.to_bytes(1, 'little')))
         print(f"[Bridge]: --> sent features vector to server")
 
-    def start(self, standalone=True):
-        asyncio.get_event_loop().run_until_complete(self.receive_weights())
-        if standalone:
-            asyncio.get_event_loop().run_forever()
+    def __start(self):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.receive_weights())
+        loop.run_forever()
+
+    def start(self):
+        from threading import Thread
+        t = Thread(target=self.__start, name='fake_bridge')
+        t.start()
 
 if __name__ == '__main__':
     bridge = FakeBridge()
-    from time import sleep
-    sleep(2)
     bridge.start()

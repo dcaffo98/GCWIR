@@ -52,10 +52,15 @@ class Client:
             except ConnectionRefusedError:
                 await asyncio.sleep(3)
     
-    def start(self, standalone=True):
-        asyncio.get_event_loop().run_until_complete(self.request_samples())
-        if standalone:
-            asyncio.get_event_loop().run_forever()
+    def __start(self):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.request_samples())
+        loop.run_forever()
+
+    def start(self):
+        from threading import Thread
+        t = Thread(target=self.__start, name='client')
+        t.start()
 
 if __name__ == '__main__':
     client = Client()

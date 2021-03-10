@@ -189,8 +189,8 @@ class Bridge():
 
     def start(self):
         from threading import Thread
-        t1 = Thread(target=self.__start)
-        t2 = Thread(target=self.__picture_loop)
+        t1 = Thread(target=self.__start, name='bridge_websocket')
+        t2 = Thread(target=self.__picture_loop, name='bridge_arduino_loop')
         t1.start()
         t2.start()
         self.loop()

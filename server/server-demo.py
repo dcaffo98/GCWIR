@@ -17,7 +17,6 @@ server = Server(address=configurator.get('Server', 'address'), model_port=config
 client = Client(server_uri=configurator.get('Client', 'server_uri'))
 bridge = FakeBridge(server_uri=configurator.get('Bridge', 'server_uri'))
 
-# asyncio.get_event_loop().run_until_complete(asyncio.gather(*server.start()))
-server.start(standalone=False)
-asyncio.get_event_loop().run_until_complete(asyncio.gather(client.request_samples(), bridge.receive_weights()))
-asyncio.get_event_loop().run_forever()
+server.start()
+client.start()
+bridge.start()

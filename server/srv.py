@@ -27,15 +27,20 @@ class Server:
         self._last_weights_update_time = self.__get_last_weights_update_time()
         if not os.path.exists(self._filename):
             os.mknod(self._filename)
-            print(10)
+            print('[Server] --> created local file \'new_weights.pth\'')
 
-    def _start(self):
-        return websockets.serve(self.model_handler, self.address, self.model_port), websockets.serve(self.bridge_handler, self.address, self.bridge_port)
-
+    def __start(self):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(asyncio.wait((
+            websockets.serve(self.model_handler, self.address, self.model_port, loop=loop), 
+            websockets.serve(self.bridge_handler, self.address, self.bridge_port, loop=loop)
+        )))
+        loop.run_forever()
+    
     def start(self, standalone=True):
-        asyncio.get_event_loop().run_until_complete(asyncio.wait(self._start()))
-        if standalone:
-            asyncio.get_event_loop().run_forever()
+        from threading import Thread
+        t = Thread(target=self.__start, name='server')
+        t.start()    
 
     def __db_up_(self):
         Base.metadata.create_all(engine)
