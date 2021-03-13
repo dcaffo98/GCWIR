@@ -23,7 +23,7 @@ class Bridge():
         self.server_uri = server_uri
         self.__sleeping_time = 3
         self.model = MaskedFaceVgg()
-        self.__camera = 1
+        self.__camera = 0
         self._cam = cv2.VideoCapture(self.__camera)
         sleep(2)      
 
@@ -33,8 +33,7 @@ class Bridge():
                 return serial.Serial(port=str(port).split(' ')[0], baudrate=baudrate, timeout=timeout)
             except serial.serialutil.SerialException:
                 continue
-        raise serial.serialutil.SerialException()
-                
+        raise serial.serialutil.SerialException()          
 
     async def __check_connection(self):
         while True:
@@ -82,7 +81,7 @@ class Bridge():
             # plt.show()
             if label:
                 result = self.model.get_feature_vector(img)
-                asyncio.create_task(self.send_features_vector(result, label))
+                self.loop.create_task(self.send_features_vector(result, label))
                 return result
             else:
                 predictions = self.model(img)
@@ -155,42 +154,35 @@ class Bridge():
     def loop(self):
         msg = []
         while True:
-            #TODO picture to be evalueted bool
-            if False:
-                #if correct 
-
-                #else
-                pass
-            else:
-                if self.arduino.in_waiting > 0:
-                    recieved = self.arduino.read(1)
-                    if recieved == b'\xfe':
-                        if len(msg) != 3:
-                            msg = []
-                        else:
-                            response = self.read_msg(msg)
-                            if response != 0:
-                                if response == 1:
-                                    print('taking a picture with label correct')
-                                    #self.turn_on('correct')
-                                    #TODO take_picture correct send.
-                                if response == 2:
-                                    print('taking a picture with label incorrect')
-                                    #self.turn_on('incorrect')
-                                    #TODO take_picture incorrect send.
-                            msg = []
+            if self.arduino.in_waiting > 0:
+                recieved = self.arduino.read(1)
+                if recieved == b'\xfe':
+                    if len(msg) != 3:
+                        msg = []
                     else:
-                        msg.append(recieved)
+                        response = self.read_msg(msg)
+                        if response != 0:
+                            if response == 1:
+                                print('taking a picture with label correct')
+                                self.take_picture(label=1)
+                                self.turn_on('correct')
+                            if response == 2:
+                                print('taking a picture with label incorrect')
+                                self.take_picture(label=0)
+                                self.turn_on('incorrect')
+                        msg = []
+                else:
+                    msg.append(recieved)
     
     def __start(self):
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.receive_weights())
-        loop.run_forever()
+        self.loop = asyncio.new_event_loop()
+        self.loop.run_until_complete(self.receive_weights())
+        self.loop.run_forever()
 
     def start(self):
         from threading import Thread
         t1 = Thread(target=self.__start, name='bridge_websocket')
-        t2 = Thread(target=self.__picture_loop, name='bridge_arduino_loop')
+        t2 = Thread(target=self.__picture_loop, name='bridge_picture_loop')
         t1.start()
         t2.start()
         self.loop()
