@@ -8,6 +8,7 @@ import pickle
 import os, sys
 import cv2
 import serial.tools.list_ports
+from threading import Thread, Event, Lock
 
 if __name__ == '__main__':
     sys.path.append(os.getcwd())
@@ -25,7 +26,26 @@ class Bridge():
         self.model = MaskedFaceVgg()
         self.__camera = 0
         self._cam = cv2.VideoCapture(self.__camera)
-        sleep(2)      
+        self._label0_event = Event()
+        self._label1_event = Event()
+        sleep(2)   
+
+    def __get_prompt(self):   
+        if self._label0_event.is_set():
+            return 'Press enter to extract a new features vector with label 0...'
+        elif self._label1_event.is_set():
+            return 'Press enter to extract a new features vector with label 1...'
+        else:
+            return 'Press enter to take a pick...'
+
+    @property
+    def label(self):
+        if self._label0_event.is_set():
+            return 0
+        elif self._label1_event.is_set():
+            return 1
+        else:
+            return None
 
     def __get_serial_port(self, baudrate, timeout):
         for port in serial.tools.list_ports.comports():
@@ -47,7 +67,7 @@ class Bridge():
         while True:
             try:
                 async with websockets.connect(self.server_uri) as websocket:
-                    print('BRIDGE CONNECTED')
+                    print('\nBRIDGE CONNECTED\n')
                     self.websocket = websocket
                     while True:
                         weights = await receive_large_obj_over_ws(self.websocket)
@@ -65,36 +85,60 @@ class Bridge():
         await self.websocket.send((features_vector, label.to_bytes(1, 'little')))
         print(f"[Bridge]: --> sent features vector to server")
     
-    def take_picture(self, label=None):
-        go = input('Press enter to take a pick...')
-        self._cam.open(self.__camera)
-        ret, frame = self._cam.read()
-        self._cam.release()
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        img = transforms.functional.to_tensor(frame)
-        img = img.unsqueeze(0)
-        img = torch.nn.functional.interpolate(img, size=(224, 224))
-        result = None
-        with torch.no_grad():
-            # import matplotlib.pyplot as plt
-            # plt.imshow(img.squeeze(0).permute(1,2,0))
-            # plt.show()
-            if label:
-                result = self.model.get_feature_vector(img)
-                self.loop.create_task(self.send_features_vector(result, label))
-                return result
-            else:
-                predictions = self.model(img)
-                result = torch.argmax(predictions, 1).squeeze(0)
-                print(f"Label: {'CORRECT' if result.item() == 1 else 'INCORRECT'}")
-                return result.item()
+    def clear_screen(self):
+        if os.name == 'posix':
+            os.system('clear')
+        else:
+            os.system('cls')        
 
-    def __picture_loop(self):
+    def __correct_stdout(self):
+        self.clear_screen()
+        print(f'{self.__get_prompt()}', flush=True)    
+
+    def take_picture(self):
+            self.clear_screen()
+            print('Press enter to take a pick...')
+            sys.stdin.read(1)
+            self._cam.open(self.__camera)
+            ret, frame = self._cam.read()
+            self._cam.release()
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = transforms.functional.to_tensor(frame)
+            img = img.unsqueeze(0)
+            img = torch.nn.functional.interpolate(img, size=(224, 224))
+            result = None
+            with torch.no_grad():
+                # import matplotlib.pyplot as plt
+                # plt.imshow(img.squeeze(0).permute(1,2,0))
+                # plt.show()
+                if self.label == 0:
+                    result = self.model.get_feature_vector(img)
+                    self._loop.create_task(self.send_features_vector(result, 0))
+                    self._label0_event.clear()
+                    self.clear_screen()
+                    return
+                elif self.label == 1:
+                    result = self.model.get_feature_vector(img)
+                    self._loop.create_task(self.send_features_vector(result, 1))
+                    self.clear_screen()
+                    self._label1_event.clear()
+                    return
+                else:
+                    predictions = self.model(img)
+                    result = torch.argmax(predictions, 1).squeeze(0)
+                    print(f"Label: {'CORRECT' if result.item() == 1 else 'INCORRECT'}")
+                    return result.item()
+
+    def __classification_loop(self):
         while True:
-            if self.take_picture() == 1:
+            result = self.take_picture()
+            if result == 1:
                 self.turn_on('correct')
-            else:
+            elif result == 0:
                 self.turn_on('incorrect')
+            elif result == -1:
+                print('CLASSIFICATION ABORTED ************')
+                pass
 
     def open(self):
         self.arduino.open()
@@ -147,7 +191,6 @@ class Bridge():
         elif msg[2] == b'\x02':
             return 2
 
-
     def is_waiting(self):
         return True
 
@@ -161,32 +204,34 @@ class Bridge():
                         msg = []
                     else:
                         response = self.read_msg(msg)
-                        if response != 0:
+                        if response != 0 and not self._label0_event.is_set() and not self._label1_event.is_set():
+                            t = Thread(target=self.__correct_stdout)
                             if response == 1:
-                                print('taking a picture with label correct')
-                                self.take_picture(label=1)
-                                self.turn_on('correct')
+                                self._label1_event.set()
+                                t.start()
+                                t.join()
+                                # self.turn_on('correct')
                             if response == 2:
-                                print('taking a picture with label incorrect')
-                                self.take_picture(label=0)
-                                self.turn_on('incorrect')
+                                self._label0_event.set()
+                                t.start()
+                                t.join()
+                                # self.turn_on('incorrect')
                         msg = []
                 else:
                     msg.append(recieved)
     
     def __start(self):
-        self.loop = asyncio.new_event_loop()
-        self.loop.run_until_complete(self.receive_weights())
-        self.loop.run_forever()
+        self._loop = asyncio.new_event_loop()
+        self._loop.run_until_complete(self.receive_weights())
+        self._loop.run_forever()
 
     def start(self):
-        from threading import Thread
         t1 = Thread(target=self.__start, name='bridge_websocket')
-        t2 = Thread(target=self.__picture_loop, name='bridge_picture_loop')
+        t2 = Thread(target=self.__classification_loop, name='bridge_classification_loop')
         t1.start()
         t2.start()
         self.loop()
-        #self.close()
+        # self.close()
 
 
 if __name__ == '__main__':
