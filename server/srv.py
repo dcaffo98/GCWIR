@@ -15,6 +15,16 @@ from server.db_manager import Session, engine, Base
 from utils.utils import send_large_obj_over_ws, receive_large_obj_over_ws
 
 
+def ws_client_disconnection_handler(func, *args, **kwargs):
+    async def wrapper(*args, **kwargs):
+        ws = args[1]
+        try:
+            return await func(*args, **kwargs)
+        except websockets.exceptions.ConnectionClosedError as e:
+            print(f'[Server] --> clent {ws.remote_address} has disconnected')
+    return wrapper
+
+        
 class Server:
     
     def __init__(self, address='localhost', model_port=8888, bridge_port=8889, sleep_time=3600):
@@ -31,10 +41,11 @@ class Server:
 
     def __start(self):
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(asyncio.wait((
+        done_tasks = loop.run_until_complete(asyncio.wait((
             websockets.serve(self.model_handler, self.address, self.model_port, loop=loop), 
             websockets.serve(self.bridge_handler, self.address, self.bridge_port, loop=loop)
-        )))
+        ), loop=loop))[0]
+        self.websocket_connections = [task.result().websockets for task in done_tasks]
         loop.run_forever()
     
     def start(self, standalone=True):
@@ -55,6 +66,7 @@ class Server:
     def __get_last_weights_update_time(self):
         return datetime.fromtimestamp(os.path.getmtime(self._filename))
 
+    @ws_client_disconnection_handler
     async def model_handler(self, websocket, path):
         last_sent_samples = set()
         while True:
@@ -75,6 +87,7 @@ class Server:
                 torch.save(weights, self._filename)
                 self._last_weights_update = datetime.now()
 
+    @ws_client_disconnection_handler
     async def __listen_to_bridge(self, websocket, path):
         while True:
             sample_label_pair = await websocket.recv()
@@ -84,6 +97,7 @@ class Server:
             sample = pickle.loads(sample)
             print(f"[Server] --> received features vector with shape {sample.shape} and label {label} from bridge and saved to db")
 
+    @ws_client_disconnection_handler
     async def __send_to_bridge(self, websocket, path):
         while True:
             new_last_weights_update_time = self.__get_last_weights_update_time()
