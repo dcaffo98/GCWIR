@@ -28,6 +28,7 @@ class Bridge():
         self._cam = cv2.VideoCapture(self.__camera)
         self._label0_event = Event()
         self._label1_event = Event()
+        self._event = Event()
         sleep(2)   
 
     def __get_prompt(self):   
@@ -97,8 +98,9 @@ class Bridge():
 
     def take_picture(self):
             self.clear_screen()
-            print('Press enter to take a pick...')
+            print(self.__get_prompt())
             sys.stdin.read(1)
+            self._event.set()
             self._cam.open(self.__camera)
             ret, frame = self._cam.read()
             self._cam.release()
@@ -114,19 +116,22 @@ class Bridge():
                 if self.label == 0:
                     result = self.model.get_feature_vector(img)
                     self._loop.create_task(self.send_features_vector(result, 0))
-                    self._label0_event.clear()
                     self.clear_screen()
+                    self._label0_event.clear()
+                    self._event.clear()
                     return
                 elif self.label == 1:
                     result = self.model.get_feature_vector(img)
                     self._loop.create_task(self.send_features_vector(result, 1))
                     self.clear_screen()
                     self._label1_event.clear()
+                    self._event.clear()
                     return
                 else:
                     predictions = self.model(img)
                     result = torch.argmax(predictions, 1).squeeze(0)
                     print(f"Label: {'CORRECT' if result.item() == 1 else 'INCORRECT'}")
+                    self._event.clear()
                     return result.item()
 
     def __classification_loop(self):
@@ -136,9 +141,6 @@ class Bridge():
                 self.turn_on('correct')
             elif result == 0:
                 self.turn_on('incorrect')
-            elif result == -1:
-                print('CLASSIFICATION ABORTED ************')
-                pass
 
     def open(self):
         self.arduino.open()
@@ -198,6 +200,8 @@ class Bridge():
         msg = []
         while True:
             if self.arduino.in_waiting > 0:
+                while self._event.is_set():
+                    continue                            # wait for current picture being processed
                 recieved = self.arduino.read(1)
                 if recieved == b'\xfe':
                     if len(msg) != 3:
@@ -205,17 +209,13 @@ class Bridge():
                     else:
                         response = self.read_msg(msg)
                         if response != 0 and not self._label0_event.is_set() and not self._label1_event.is_set():
-                            t = Thread(target=self.__correct_stdout)
                             if response == 1:
                                 self._label1_event.set()
-                                t.start()
-                                t.join()
                                 # self.turn_on('correct')
                             if response == 2:
                                 self._label0_event.set()
-                                t.start()
-                                t.join()
                                 # self.turn_on('incorrect')
+                            self.__correct_stdout()
                         msg = []
                 else:
                     msg.append(recieved)
