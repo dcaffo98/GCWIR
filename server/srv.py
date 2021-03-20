@@ -58,7 +58,7 @@ class Server:
         return Session()
 
     def db_upload(self, sample, label):
-        obj = VggFeaturesVector(data=sample, label=label)
+        obj = VggFeaturesVector(data=sample, label=label, timestamp=datetime.now())
         from uuid import uuid4
         self.session.add(obj)
         self.session.commit()
