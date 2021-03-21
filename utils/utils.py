@@ -30,4 +30,10 @@ async def receive_large_obj_over_ws(websocket):
         current_received_size += len(l[index])
     sorted_indexes = sorted(l.keys())
     return b''.join([l[i] for i in sorted_indexes])
+
+def clear_screen():
+    if os.name == 'posix':
+        os.system('clear')
+    else:
+        os.system('cls')    
     

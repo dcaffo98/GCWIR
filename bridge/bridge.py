@@ -14,7 +14,7 @@ if __name__ == '__main__':
     sys.path.append(os.getcwd())
 sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
-from utils.utils import receive_large_obj_over_ws
+from utils.utils import receive_large_obj_over_ws, clear_screen
 from model.masked_face_vgg import MaskedFaceVgg
 from torchvision import transforms
 
@@ -84,20 +84,14 @@ class Bridge():
         features_vector = features_vector.squeeze(0)
         features_vector = pickle.dumps(features_vector)
         await self.websocket.send((features_vector, label.to_bytes(1, 'little')))
-        print(f"[Bridge]: --> sent features vector to server")
-    
-    def clear_screen(self):
-        if os.name == 'posix':
-            os.system('clear')
-        else:
-            os.system('cls')        
+        print(f"[Bridge]: --> sent features vector to server")    
 
     def __correct_stdout(self):
-        self.clear_screen()
+        clear_screen()
         print(f'{self.__get_prompt()}', flush=True)    
 
     def take_picture(self):
-            self.clear_screen()
+            clear_screen()
             print(self.__get_prompt())
             sys.stdin.read(1)
             self._event.set()
@@ -116,14 +110,14 @@ class Bridge():
                 if self.label == 0:
                     result = self.model.get_feature_vector(img)
                     self._loop.create_task(self.send_features_vector(result, 0))
-                    self.clear_screen()
+                    clear_screen()
                     self._label0_event.clear()
                     self._event.clear()
                     return
                 elif self.label == 1:
                     result = self.model.get_feature_vector(img)
                     self._loop.create_task(self.send_features_vector(result, 1))
-                    self.clear_screen()
+                    clear_screen()
                     self._label1_event.clear()
                     self._event.clear()
                     return
