@@ -5,9 +5,11 @@ import pickle
 import os, sys
 from datetime import datetime
 import os, sys
+import logging
 
 if __name__ == '__main__':
     sys.path.append(os.getcwd())
+    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
 from server.db_models import VggFeaturesVector
@@ -21,7 +23,7 @@ def ws_client_disconnection_handler(func, *args, **kwargs):
         try:
             return await func(*args, **kwargs)
         except websockets.exceptions.ConnectionClosedError as e:
-            print(f'[Server] --> clent {ws.remote_address} has disconnected')
+            logging.info(f'[Server] --> clent {ws.remote_address} has disconnected')
     return wrapper
 
         
@@ -35,7 +37,7 @@ class Server:
         self.sleep_time = sleep_time
         self._filename = 'server/new_weights.pth'
         if create_file(self._filename):
-            print('[Server] --> created local file \'new_weights.pth\'')
+            logging.info('[Server] --> created local file \'new_weights.pth\'')
         self._last_weights_update_time = self.__get_last_weights_update_time()
 
     def __start(self):
@@ -80,9 +82,9 @@ class Server:
             await send_large_obj_over_ws(websocket, result)
             if query:
                 weights = await receive_large_obj_over_ws(websocket)
-                print(f"[Server] --> received {len(weights)} bytes")
+                logging.info(f"[Server] --> received {len(weights)} bytes")
                 weights = pickle.loads(weights)
-                print(type(weights))
+                logging.info(f"[Server] --> received {type(weights)}")
                 torch.save(weights, self._filename)
                 self._last_weights_update = datetime.now()
 
@@ -94,7 +96,7 @@ class Server:
             label = int.from_bytes(sample_label_pair[-1:], 'little')
             self.db_upload(sample, label)
             sample = pickle.loads(sample)
-            print(f"[Server] --> received features vector with shape {sample.shape} and label {label} from bridge and saved to db")
+            logging.info(f"[Server] --> received features vector with shape {sample.shape} and label {label} from bridge and saved to db")
 
     @ws_client_disconnection_handler
     async def __send_to_bridge(self, websocket, path):

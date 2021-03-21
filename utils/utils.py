@@ -1,6 +1,7 @@
 import asyncio
 from uuid import uuid4
 import os, sys
+import logging
 
 if __name__ == '__main__':
     sys.path.append(os.getcwd())

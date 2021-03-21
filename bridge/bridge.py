@@ -9,9 +9,11 @@ import os, sys
 import cv2
 import serial.tools.list_ports
 from threading import Thread, Event, Lock
+import logging
 
 if __name__ == '__main__':
     sys.path.append(os.getcwd())
+    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
 from utils.utils import receive_large_obj_over_ws, clear_screen
@@ -68,14 +70,14 @@ class Bridge():
         while True:
             try:
                 async with websockets.connect(self.server_uri) as websocket:
-                    print('\nBRIDGE CONNECTED\n')
+                    logging.info('\nBRIDGE CONNECTED\n')
                     self.websocket = websocket
                     while True:
                         weights = await receive_large_obj_over_ws(self.websocket)
-                        print(f"[Bridge]: --> received {len(weights)} bytes")
+                        logging.info(f"[Bridge]: --> received {len(weights)} bytes")
                         weights = pickle.loads(weights)
                         self.model.classifier.load_state_dict(weights, strict=True)
-                        print(f"[Bridge]: --> weights loading completed")
+                        logging.info(f"[Bridge]: --> weights loading completed")
             except ConnectionRefusedError:
                 await asyncio.sleep(3)
 
@@ -84,7 +86,7 @@ class Bridge():
         features_vector = features_vector.squeeze(0)
         features_vector = pickle.dumps(features_vector)
         await self.websocket.send((features_vector, label.to_bytes(1, 'little')))
-        print(f"[Bridge]: --> sent features vector to server")    
+        logging.info(f"[Bridge]: --> sent features vector to server")    
 
     def __correct_stdout(self):
         clear_screen()
