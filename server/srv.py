@@ -12,7 +12,7 @@ sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
 from server.db_models import VggFeaturesVector
 from server.db_manager import Session, engine, Base
-from utils.utils import send_large_obj_over_ws, receive_large_obj_over_ws
+from utils.utils import send_large_obj_over_ws, receive_large_obj_over_ws, create_file
 
 
 def ws_client_disconnection_handler(func, *args, **kwargs):
@@ -34,10 +34,9 @@ class Server:
         self.bridge_port = bridge_port
         self.sleep_time = sleep_time
         self._filename = 'server/new_weights.pth'
-        self._last_weights_update_time = self.__get_last_weights_update_time()
-        if not os.path.exists(self._filename):
-            os.mknod(self._filename)
+        if create_file(self._filename):
             print('[Server] --> created local file \'new_weights.pth\'')
+        self._last_weights_update_time = self.__get_last_weights_update_time()
 
     def __start(self):
         loop = asyncio.new_event_loop()

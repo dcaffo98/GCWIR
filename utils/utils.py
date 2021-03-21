@@ -36,4 +36,10 @@ def clear_screen():
         os.system('clear')
     else:
         os.system('cls')    
-    
+
+def create_file(path):
+    if os.path.exists(path):
+        return False
+    else:
+        open(path, 'wb').close()
+        return os.path.exists(path)
