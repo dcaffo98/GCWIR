@@ -94,21 +94,22 @@ class Bridge():
 
     def take_picture(self):
             clear_screen()
-            print(self.__get_prompt())
-            sys.stdin.read(1)
-            self._event.set()
             self._cam.open(self.__camera)
-            ret, frame = self._cam.read()
-            self._cam.release()
+            ret, frame = self.__show_video()
+            self._event.set()
+            #self._cam.release()
+            
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             img = transforms.functional.to_tensor(frame)
             img = img.unsqueeze(0)
             img = torch.nn.functional.interpolate(img, size=(224, 224))
             result = None
+            
             with torch.no_grad():
                 # import matplotlib.pyplot as plt
                 # plt.imshow(img.squeeze(0).permute(1,2,0))
                 # plt.show()
+                
                 if self.label == 0:
                     result = self.model.get_feature_vector(img)
                     self._loop.create_task(self.send_features_vector(result, 0))
@@ -139,18 +140,16 @@ class Bridge():
                 self.turn_on('incorrect')
 
     def __show_video(self):
-        my_cam = cv2.VideoCapture(self.__camera, cv2.CAP_DSHOW)
-        while my_cam.isOpened():
-            ret, frame = my_cam.read()
+        while self._cam.isOpened():
+            ret, frame = self._cam.read()
             if ret == True:
                 cv2.imshow('Frame',frame)
 
                 if cv2.waitKey(25) & 0xFF == ord('q'):
-                    break
+                    #cv2.destroyAllWindows()
+                    return ret, frame
             else:
                 break
-        my_cam.release()
-        cv2.destroyAllWindows()
 
     def open(self):
         self.arduino.open()
@@ -237,11 +236,11 @@ class Bridge():
 
     def start(self):
         t1 = Thread(target=self.__start, name='bridge_websocket')
-        #t2 = Thread(target=self.__classification_loop, name='bridge_classification_loop')
-        t3 = Thread(target=self.__show_video, name='camera_video_loop')
+        t2 = Thread(target=self.__classification_loop, name='bridge_classification_loop')
+        #t3 = Thread(target=self.__show_video, name='camera_video_loop')
         t1.start()
-        #t2.start()
-        t3.start()
+        t2.start()
+        #t3.start()
         self.loop()
         # self.close()
 
