@@ -237,11 +237,11 @@ class Bridge():
 
     def start(self):
         t1 = Thread(target=self.__start, name='bridge_websocket')
-        #t2 = Thread(target=self.__classification_loop, name='bridge_classification_loop')
-        t3 = Thread(target=self.__show_video, name='camera_video_loop')
+        t2 = Thread(target=self.__classification_loop, name='bridge_classification_loop')
+        #t3 = Thread(target=self.__show_video, name='camera_video_loop')
         t1.start()
-        #t2.start()
-        t3.start()
+        t2.start()
+        #t3.start()
         self.loop()
         # self.close()
 
