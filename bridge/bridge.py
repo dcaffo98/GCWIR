@@ -138,6 +138,20 @@ class Bridge():
             elif result == 0:
                 self.turn_on('incorrect')
 
+    def __show_video(self):
+        my_cam = cv2.VideoCapture(self.__camera, cv2.CAP_DSHOW)
+        while my_cam.isOpened():
+            ret, frame = my_cam.read()
+            if ret == True:
+                cv2.imshow('Frame',frame)
+
+                if cv2.waitKey(25) & 0xFF == ord('q'):
+                    break
+            else:
+                break
+        my_cam.release()
+        cv2.destroyAllWindows()
+
     def open(self):
         self.arduino.open()
 
@@ -223,9 +237,11 @@ class Bridge():
 
     def start(self):
         t1 = Thread(target=self.__start, name='bridge_websocket')
-        t2 = Thread(target=self.__classification_loop, name='bridge_classification_loop')
+        #t2 = Thread(target=self.__classification_loop, name='bridge_classification_loop')
+        t3 = Thread(target=self.__show_video, name='camera_video_loop')
         t1.start()
-        t2.start()
+        #t2.start()
+        t3.start()
         self.loop()
         # self.close()
 
