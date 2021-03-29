@@ -7,7 +7,7 @@ sys.path[0]=os.path.dirname(os.path.realpath(__file__))
 
 class Configurator():
         
-    def __init__(self, filename='/home/david/iot/project/settings.ini'): 
+    def __init__(self, filename='./settings.ini'): 
         self.__config = ConfigParser()
         self.__config.read(filename)
         print(self.__config['Dataset']['dataset_root_path'])

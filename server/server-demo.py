@@ -1,5 +1,6 @@
 import asyncio
 import os, sys
+from time import sleep
 
 if __name__ == '__main__':
     sys.path.append(os.getcwd())
@@ -16,6 +17,6 @@ server = Server(address=configurator.get('Server', 'address'), model_port=config
 client = Client(server_uri=configurator.get('Client', 'server_uri'))
 bridge = FakeBridge(server_uri=configurator.get('Bridge', 'server_uri'))
 
-asyncio.get_event_loop().run_until_complete(asyncio.gather(*server.start()))
-asyncio.get_event_loop().run_until_complete(asyncio.gather(client.request_samples(), bridge.foo()))
-asyncio.get_event_loop().run_forever()
+server.start()
+client.start()
+bridge.start()

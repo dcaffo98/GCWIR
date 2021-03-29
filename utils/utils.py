@@ -1,9 +1,14 @@
 import asyncio
+from uuid import uuid4
 import os, sys
+import logging
 
 if __name__ == '__main__':
     sys.path.append(os.getcwd())
 sys.path[0]=os.path.dirname(os.path.realpath(__file__))
+
+def stringify_uuid4():
+    return str(uuid4())
 
 async def send_large_obj_over_ws(websocket, obj, chunk_size=1000000):
     await websocket.send(len(obj).to_bytes(16, 'little'))
@@ -26,3 +31,16 @@ async def receive_large_obj_over_ws(websocket):
         current_received_size += len(l[index])
     sorted_indexes = sorted(l.keys())
     return b''.join([l[i] for i in sorted_indexes])
+
+def clear_screen():
+    if os.name == 'posix':
+        os.system('clear')
+    else:
+        os.system('cls')    
+
+def create_file(path):
+    if os.path.exists(path):
+        return False
+    else:
+        open(path, 'wb').close()
+        return os.path.exists(path)

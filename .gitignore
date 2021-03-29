@@ -8,6 +8,7 @@ venv/
 
 *.pth
 
-IMFD
-
 CMFD
+
+IMFD
+maskednet.log
