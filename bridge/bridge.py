@@ -35,11 +35,11 @@ class Bridge():
 
     def __get_prompt(self):   
         if self._label0_event.is_set():
-            return 'Press enter to extract a new features vector with label 0...'
+            return 'Press \'q\' to extract a new features vector with label 0...'
         elif self._label1_event.is_set():
-            return 'Press enter to extract a new features vector with label 1...'
+            return 'Press \'q\' to extract a new features vector with label 1...'
         else:
-            return 'Press enter to take a pick...'
+            return 'Press \'q\' to take a pick...'
 
     @property
     def label(self):
@@ -97,7 +97,7 @@ class Bridge():
             self._cam.open(self.__camera)
             ret, frame = self.__show_video()
             self._event.set()
-            #self._cam.release()
+            # self._cam.release()
             
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             img = transforms.functional.to_tensor(frame)
@@ -146,7 +146,7 @@ class Bridge():
                 cv2.imshow('Frame',frame)
 
                 if cv2.waitKey(25) & 0xFF == ord('q'):
-                    #cv2.destroyAllWindows()
+                    # cv2.destroyAllWindows()
                     return ret, frame
             else:
                 break
@@ -220,10 +220,8 @@ class Bridge():
                         if response != 0 and not self._label0_event.is_set() and not self._label1_event.is_set():
                             if response == 1:
                                 self._label1_event.set()
-                                # self.turn_on('correct')
                             if response == 2:
                                 self._label0_event.set()
-                                # self.turn_on('incorrect')
                             self.__correct_stdout()
                         msg = []
                 else:
@@ -237,10 +235,8 @@ class Bridge():
     def start(self):
         t1 = Thread(target=self.__start, name='bridge_websocket')
         t2 = Thread(target=self.__classification_loop, name='bridge_classification_loop')
-        #t3 = Thread(target=self.__show_video, name='camera_video_loop')
         t1.start()
         t2.start()
-        #t3.start()
         self.loop()
         # self.close()
 
